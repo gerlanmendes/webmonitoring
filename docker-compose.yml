@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  agent:
+    build: ./agent
+    container_name: monitoring-agent
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/
+      - MONGO_DB=monitoring
+      - CHECK_INTERVAL=60
+    depends_on:
+      - mongodb
+    networks:
+      - monitoring-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - monitoring-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_INSTALL_PLUGINS=grafana-mongodb-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - mongodb
+    networks:
+      - monitoring-network
+
+networks:
+  monitoring-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  grafana_data:

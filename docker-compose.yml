@@ -1,52 +1,61 @@
-version: '3.8'
+version: '3'
 
 services:
-  agent:
-    build: ./agent
-    container_name: monitoring-agent
+  monitoring_agent:
+    build:
+      context: ./agent
     restart: always
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/
-      - MONGO_DB=monitoring
-      - CHECK_INTERVAL=60
     depends_on:
-      - mongodb
+      - influxdb
+    environment:
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_USER=admin
+      - INFLUXDB_PASSWORD=admin
+      - INFLUXDB_DATABASE=network_monitoring
+      - CHECK_INTERVAL=60
     networks:
-      - monitoring-network
-
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    restart: always
-    ports:
-      - "27017:27017"
+      - monitoring_net
+  telegraf:
+    image: "telegraf:latest"
+    hostname: "telegraf"
+    networks:
+      - monitoring_net
     volumes:
-      - mongodb_data:/data/db
+    - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+  influxdb:
+    image: influxdb:1.8
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=network_monitoring
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=admin
     networks:
-      - monitoring-network
+      - monitoring_net
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
-    restart: always
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_INSTALL_PLUGINS=grafana-mongodb-datasource
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
     depends_on:
-      - mongodb
+      - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
     networks:
-      - monitoring-network
+      - monitoring_net
 
 networks:
-  monitoring-network:
-    driver: bridge
+  monitoring_net:
 
 volumes:
-  mongodb_data:
+  influxdb_data:
   grafana_data:

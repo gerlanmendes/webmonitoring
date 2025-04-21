@@ -1,0 +1,11 @@
+# # /grafana/provisioning/datasources/mongodb.yml
+# apiVersion: 1
+
+# datasources:
+# - name: MongoDB
+#   type: grafana-mongodb-datasource
+#   access: proxy
+#   url: mongodb://mongodb:27017
+#   database: monitoring
+#   isDefault: false
+#   editable: true

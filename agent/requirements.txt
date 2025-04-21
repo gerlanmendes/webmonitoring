@@ -1,0 +1,7 @@
+#requests==2.31.0
+#icmplib==3.0.4
+#python-dotenv==1.0.0
+#schedule==1.2.2
+#influxdb-client==2.11.0
+requests==2.31.0
+influxdb==5.3.1
